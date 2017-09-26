@@ -1,5 +1,6 @@
 import sys
 from copy import deepcopy
+from copy import copy
 from time import sleep
 
 class Square:
@@ -51,122 +52,108 @@ class Square:
     def __init__(self):
         self.possibilities = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.x == other.x and self.y == other.y
+
+    def __eq__(self, other):
+        return not slef.__eq__(other)
+
+
 class Grid:
     Squares = []
     
     @staticmethod
-    def GetCorrectSquares(squares):
-        if all(square.isSolved() for square in flattenArray(squares)):
-            return deepcopy(squares)
-        if not Grid.SquaresAreValid(squares):
+    def Solve(grid):
+        if all(square.isSolved() for square in flattenArray(deepcopy(grid.Squares))):
+            return grid
+        if not grid.SquaresAreValid():
             return None
-        Grid.Display(squares)
+
+        square = grid.getMostSolvedSquare()
+        row, col = square.x, square.y
+        for possibility in square.activePossibilities():
+            grid.display()
+            backupSquares = deepcopy(grid.Squares)
+            grid.Squares[row][col].assignVal(possibility)
+            grid.smartElimination()
+            grid.display()
+            result = Grid.Solve(grid)
+            if result is not None:
+                return result
+            else:
+                grid.Squares  = backupSquares
+        return None
+
+    def getMostSolvedSquare(self):
         minVal = 9
         minSquare = None
         for row in range(0,9):
             for col in range(0,9):
-                if not squares[row][col].isSolved():
-                    if squares[row][col].numberOfPossibilities() < minVal:
-                        minSquare = squares[row][col]
-                        minVal = squares[row][col].numberOfPossibilities()
-
-        square = minSquare
-                
-        #square = min([(min(row, key=getPossibilitiesValue), row) for row in squares], key=getPossibilitiesValue)
-        row, col = square.x, square.y
-        print row
-        print col
-        for possibility in square.activePossibilities():
-            #raw_input("Press Enter to continue...")
-            squaresBackup = deepcopy(squares)
-            print "Try Possibility",possibility
-            print "For Coord (",row,col,")"
-            print square.isSolved()
-            print squares[row][col].isSolved()
-            print squares[row][col].numberOfPossibilities()
-            Grid.Display(squares)
-            squares[row][col].assignVal(possibility)
-            Grid.RemovePossibilityForRow( squares, squares[row][col] )
-            Grid.RemovePossibilityForCol( squares, squares[row][col] )
-            Grid.RemovePossibilityForSubGrid( squares, squares[row][col] )
-            if Grid.GetCorrectSquares(deepcopy(squares)) != None:
-                return squares
-            else:
-                squares = squaresBackup
-        return None
+                if not self.Squares[row][col].isSolved():
+                    if self.Squares[row][col].numberOfPossibilities() < minVal:
+                        minSquare = self.Squares[row][col]
+                        minVal = self.Squares[row][col].numberOfPossibilities()
+        return minSquare
 
     def smartElimination(self):
+        solved = [square for square in flattenArray(self.Squares) if square.isSolved()]
+        while len(solved) > 0:
+            square = solved.pop(0)
+            solved += Grid.RemovePossibilityForRow( self.Squares, square )
+            solved += Grid.RemovePossibilityForCol( self.Squares, square )
+            solved += Grid.RemovePossibilityForSubGrid( self.Squares, square )
+
+    def SquaresAreValid(self):
         for row in range(0,9):
             for col in range(0,9):
-                if self.Squares[row][col].isSolved():
-                    Grid.RemovePossibilityForRow( self.Squares, self.Squares[row][col] )
-                    Grid.RemovePossibilityForCol( self.Squares, self.Squares[row][col] )
-                    Grid.RemovePossibilityForSubGrid( self.Squares, self.Squares[row][col] )
-
-    @staticmethod
-    def SquaresAreValid(squares):
-        for row in squares:
-            for square in row:
-                if not square.isValid():
+                if not self.Squares[row][col].isValid():
+                    print "NOT VALID"
                     return False
         return True
-    @staticmethod
-    #def RemovePossibilityForRow(squares, row, val):
-    def RemovePossibilityForRow(squares, square):
-        row = square.x
-        print "row", row, "for", square.getValue(), "from col ", square.y
 
-        #Grid.Display(squares)
+    @staticmethod
+    def RemovePossibilityForRow(squares, square):
+        solved = []
+        row = square.x
         for col in range(0,9):
             if not col == square.y:
-                if squares[row][col].eliminatePossibility(square.getValue()):
+                if squares[row][col].eliminatePossibility(squares[square.x][square.y].getValue()):
                     if not squares[row][col].isValid(): 
                         print "FOUND INVALID"
-                        return
-                    #print "SOLVED", square.y, ",", row, "with val", square.getValue()
-                    Grid.RemovePossibilityForSubGrid(squares, squares[row][col])
-                    Grid.RemovePossibilityForRow(squares, squares[row][col])
-                    Grid.RemovePossibilityForCol(squares, squares[row][col])
-        return squares
+                        return None
+                    else:
+                        solved.append(deepcopy(squares[row][col]))
+        return solved
 
     @staticmethod
-    #def RemovePossibilityForCol(squares, col, val):
     def RemovePossibilityForCol(squares, square):
+        solved = []
         col = square.y
-        print "col", col, "for", square.getValue(), "from row ", square.x 
-        #Grid.Display(squares)
         for row in range(0,9):
             if not squares[row][col].x == square.x:
-                if squares[row][col].eliminatePossibility(square.getValue()):
+                if squares[row][col].eliminatePossibility(squares[square.x][square.y].getValue()):
                     if not squares[row][col].isValid(): 
                         print "FOUND INVALID"
-                        return
-                    #print "SOLVED", col, ",", row[col].x, "with val", row[col].getValue()
-                    Grid.RemovePossibilityForSubGrid(squares, squares[row][col])
-                    Grid.RemovePossibilityForRow(squares, squares[row][col])
-                    Grid.RemovePossibilityForCol(squares, squares[row][col])
-
+                        return None
+                    else:
+                        solved.append(deepcopy(squares[row][col]))
+        return solved
 
     @staticmethod
-    #def RemovePossibilityForSubGrid(squares, squareRow, squareCol, val):
     def RemovePossibilityForSubGrid(squares, square):
-        print "grid", square.x, square.y, "for", square.getValue()
-        Grid.Display(squares)
-        
+        solved = []
         if square.getValue() == None:
-            return
+            return 
         for row in range((square.x/3)*3, ((square.x/3)*3)+3):
             for col in range((square.y/3)*3, ((square.y/3)*3)+3):
                 if row != square.x and col != square.y:
-                    print row, col, square.x, square.y
-                    if squares[row][col].eliminatePossibility(square.getValue()):
+                    if squares[row][col].eliminatePossibility(squares[square.x][square.y].getValue()):
                         if not squares[row][col].isValid(): 
                             print "FOUND INVALID"
-                            return
-                        #print "SOLVED", col, ",", row, "with val", squares[row][col].getValue()
-                        Grid.RemovePossibilityForSubGrid(squares, squares[row][col])
-                        Grid.RemovePossibilityForRow(squares, squares[row][col])
-                        Grid.RemovePossibilityForCol(squares, squares[row][col])
+                            return None
+                        else:
+                            solved.append(deepcopy(squares[row][col]))
+        return solved
 
     def bruteForce(self): 
         squares = Grid.GetCorrectSquares(deepcopy(self.Squares))
@@ -202,23 +189,19 @@ def flattenArray(list):
             newList.append(list[row][col])
     return newList
 
-def getPossibilitiesValue(s):
-    if s.isSolved():
-        return 9
-    else:
-        return s.numberOfPossibilities()
-            
-sys.setrecursionlimit(10000)
-GridNum = 4
+GridNum = 30
 grid = Grid()
 row = 0
 col = 0
 with open("p096_sudoku.txt") as f:
-    for line in f.readlines()[((GridNum*9)+GridNum+1):(GridNum*9)+GridNum+1+8]:
+    start = (GridNum-1) * 9 + GridNum
+    end = start + 9
+    for line in f.readlines()[start:end]:
         for num in line:
             if(num.isdigit()):
                 grid.Squares[row][col].assignVal(int(num))
                 grid.Squares[row][col].setCoord(row, col)
+                print "setting coord", row, col
             col += 1
         row += 1
         col = 0
@@ -228,4 +211,4 @@ grid.smartElimination()
 print "=========== After ==========="
 grid.display()
 
-#grid.bruteForce()
+Grid.Solve(grid).display()
