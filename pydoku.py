@@ -3,6 +3,9 @@ from copy import deepcopy
 
 PUZZLE_FILE = "p096_sudoku.txt"
 BLANK_SPACE_CHAR = 0
+MIN_PUZZLE_NUM = 1
+MAX_PUZZLE_NUM = 50
+SUDOKU_GRID_SIZE = 9
 
 class Square:
     possibilities = []
@@ -26,7 +29,7 @@ class Square:
 
     def assignVal(self, val):
         if val != BLANK_SPACE_CHAR:
-            for i in range(0,9):
+            for i in range(0,SUDOKU_GRID_SIZE):
                 if self.possibilities[i] != val:
                     self.possibilities[i] = None
 
@@ -96,8 +99,8 @@ class Grid:
 
     # Return True if all squares have only one possible value
     def isSolved(self):
-        for row in range(0,9):
-            for col in range(0,9):
+        for row in range(0,SUDOKU_GRID_SIZE):
+            for col in range(0,SUDOKU_GRID_SIZE):
                 if not self.Squares[row][col].isSolved():
                     return False
         return True
@@ -106,8 +109,8 @@ class Grid:
     def getMostSolvedSquare(self):
         minVal = 9
         minSquare = None
-        for row in range(0,9):
-            for col in range(0,9):
+        for row in range(0,SUDOKU_GRID_SIZE):
+            for col in range(0,SUDOKU_GRID_SIZE):
                 if not self.Squares[row][col].isSolved():
                     if self.Squares[row][col].numberOfPossibilities() < minVal:
                         minSquare = self.Squares[row][col]
@@ -117,8 +120,8 @@ class Grid:
     # Return a list of all squares in the grid that are solved
     def getSolvedSquares(self):
         solved = []
-        for row in range(0,9):
-            for col in range(0,9):
+        for row in range(0,SUDOKU_GRID_SIZE):
+            for col in range(0,SUDOKU_GRID_SIZE):
                 if self.Squares[row][col].isSolved():
                     solved.append(self.Squares[row][col]) 
         return solved
@@ -135,8 +138,8 @@ class Grid:
 
     # Return true if every square in the grid has at least 1 value
     def isValid(self):
-        for row in range(0,9):
-            for col in range(0,9):
+        for row in range(0,SUDOKU_GRID_SIZE):
+            for col in range(0,SUDOKU_GRID_SIZE):
                 if not self.Squares[row][col].isValid():
                     return False
         return True
@@ -145,18 +148,24 @@ class Grid:
     def removePossibilityForRow(self, square):
         solved = []
         row = square.x
-        for col in range(0,9):
-            if not col == square.y and  self.Squares[row][col].eliminatePossibility(square.getValue()):
-                solved.append(deepcopy(self.Squares[row][col]))
+        for col in range(0,SUDOKU_GRID_SIZE):
+            # Only perform the elimination if the square in question is not the one passed into this function
+            if not col == square.y: 
+                # if eliminating that possibility solved the square, add it to the solved list
+                if self.Squares[row][col].eliminatePossibility(square.getValue()):
+                    solved.append(self.Squares[row][col])
         return solved
 
     # Remove the value of the given square from the possibilities of every other square in its column
     def removePossibilityForCol(self, square):
         solved = []
         col = square.y
-        for row in range(0,9):
-            if not self.Squares[row][col].x == square.x and self.Squares[row][col].eliminatePossibility(square.getValue()):
-                solved.append(deepcopy(self.Squares[row][col]))
+        for row in range(0,SUDOKU_GRID_SIZE):
+            # Only perform the elimination if the square in question is not the one passed into this function
+            if not self.Squares[row][col].x == square.x:
+                # if eliminating that possibility solved the square, add it to the solved list
+                if self.Squares[row][col].eliminatePossibility(square.getValue()):
+                    solved.append(self.Squares[row][col])
         return solved
 
     # Remove the value of the given square from the possibilities of every other square in its subgrid
@@ -166,15 +175,18 @@ class Grid:
             return 
         for row in range((square.x/3)*3, ((square.x/3)*3)+3):
             for col in range((square.y/3)*3, ((square.y/3)*3)+3):
-                if row != square.x and col != square.y and self.Squares[row][col].eliminatePossibility(square.getValue()):
-                    solved.append(deepcopy(self.Squares[row][col]))
+                # Only perform the elimination if the square in question is not the one passed into this function
+                if row != square.x and col != square.y:
+                    # if eliminating that possibility solved the square, add it to the solved list
+                    if self.Squares[row][col].eliminatePossibility(square.getValue()):
+                        solved.append(self.Squares[row][col])
         return solved
 
     # Print the grid out, displaying every possible value for that square
     def display(self):
         line = '+'.join(['-'*3]*3)
-        for row in range(0,9):
-            print ''.join(str(self.Squares[row][col].getValue() or "*")+('|' if col in [2,5] else '') for col in range(0,9))
+        for row in range(0,SUDOKU_GRID_SIZE):
+            print ''.join(str(self.Squares[row][col].getValue() or "*")+('|' if col in [2,5] else '') for col in range(0,SUDOKU_GRID_SIZE))
             if row in [2,5]: print line
 
     # First use intelligent methods to eliminate as many methods as possible,
@@ -189,13 +201,12 @@ if len(sys.argv) < 2:
     exit()
 else: 
     try:
-        if(int(sys.argv[1]) < 51 and int(sys.argv[1]) > 0):
+        if(int(sys.argv[1]) <= MAX_PUZZLE_NUM and int(sys.argv[1]) >= MIN_PUZZLE_NUM):
             GridNum = int(sys.argv[1])
-            start = (GridNum-1)*9+GridNum
-            end = start + 9
             with open(PUZZLE_FILE) as f:
-                grid = Grid(f.readlines()[start:end])
-            print "=========== Puzzle ==========="
+                grid = Grid(f.readlines()[(GridNum*10)-9:GridNum*10])
+
+            print "=========== Unsolved Puzzle ==========="
             grid.display()
             raw_input("Press Enter to reveal solution")
             print "\n=========== Solution ==========="
