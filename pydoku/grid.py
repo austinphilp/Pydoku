@@ -1,60 +1,6 @@
+import constants
 from copy import deepcopy
-import sys
-
-PUZZLE_FILE = "p096_sudoku.txt"
-BLANK_SPACE_CHAR = 0
-MIN_PUZZLE_NUM = 1
-MAX_PUZZLE_NUM = 50
-SUDOKU_GRID_SIZE = 9
-
-
-class Square(object):
-    possibilities = []
-    x = 0
-    y = 0
-
-    def isSolved(self):
-        return self.numberOfPossibilities() == 1
-
-    def numberOfPossibilities(self):
-        return len(self.activePossibilities())
-
-    def activePossibilities(self):
-        return [x for x in self.possibilities if x is not None]
-
-    def getValue(self):
-        if not self.isSolved():
-            return None
-        else:
-            return [x for x in self.possibilities if x is not None][0]
-
-    def assignVal(self, val):
-        if val != BLANK_SPACE_CHAR:
-            for i in range(0, SUDOKU_GRID_SIZE):
-                if self.possibilities[i] != val:
-                    self.possibilities[i] = None
-
-    def isValid(self):
-        return self.numberOfPossibilities() > 0
-
-    def eliminatePossibility(self, num):
-        if num is None:
-            return False
-        previouslySolved = self.isSolved()
-        self.possibilities[num-1] = None
-        return self.isSolved() and not previouslySolved
-
-    def getPossibilitiesString(self):
-        return ''.join(str(num) for num in self.activePossibilities())
-
-    def getCoord(self):
-        return (self.x, self.y)
-
-    def __init__(self, x, y, val):
-        self.possibilities = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-        self.x = x
-        self.y = y
-        self.assignVal(val)
+from square import Square
 
 
 class Grid(object):
@@ -102,8 +48,8 @@ class Grid(object):
 
     # Return True if all squares have only one possible value
     def isSolved(self):
-        for row in range(0, SUDOKU_GRID_SIZE):
-            for col in range(0, SUDOKU_GRID_SIZE):
+        for row in range(0, constants.SUDOKU_GRID_SIZE):
+            for col in range(0, constants.SUDOKU_GRID_SIZE):
                 if not self.Squares[row][col].isSolved():
                     return False
         return True
@@ -112,8 +58,8 @@ class Grid(object):
     def getMostSolvedSquare(self):
         minVal = 9
         minSquare = None
-        for row in range(0, SUDOKU_GRID_SIZE):
-            for col in range(0, SUDOKU_GRID_SIZE):
+        for row in range(0, constants.SUDOKU_GRID_SIZE):
+            for col in range(0, constants.SUDOKU_GRID_SIZE):
                 if not self.Squares[row][col].isSolved():
                     if self.Squares[row][col].numberOfPossibilities() < minVal:
                         minSquare = self.Squares[row][col]
@@ -123,8 +69,8 @@ class Grid(object):
     # Return a list of all squares in the grid that are solved
     def getSolvedSquares(self):
         solved = []
-        for row in range(0, SUDOKU_GRID_SIZE):
-            for col in range(0, SUDOKU_GRID_SIZE):
+        for row in range(0, constants.SUDOKU_GRID_SIZE):
+            for col in range(0, constants.SUDOKU_GRID_SIZE):
                 if self.Squares[row][col].isSolved():
                     solved.append(self.Squares[row][col])
         return solved
@@ -141,8 +87,8 @@ class Grid(object):
 
     # Return true if every square in the grid has at least 1 value
     def isValid(self):
-        for row in range(0, SUDOKU_GRID_SIZE):
-            for col in range(0, SUDOKU_GRID_SIZE):
+        for row in range(0, constants.SUDOKU_GRID_SIZE):
+            for col in range(0, constants.SUDOKU_GRID_SIZE):
                 if not self.Squares[row][col].isValid():
                     return False
         return True
@@ -152,7 +98,7 @@ class Grid(object):
     def removePossibilityForRow(self, square):
         solved = []
         row = square.x
-        for col in range(0, SUDOKU_GRID_SIZE):
+        for col in range(0, constants.SUDOKU_GRID_SIZE):
             # Only perform the elimination if the square in
             # question is not the one passed into this function
             if not col == square.y:
@@ -168,7 +114,7 @@ class Grid(object):
     def removePossibilityForCol(self, square):
         solved = []
         col = square.y
-        for row in range(0, SUDOKU_GRID_SIZE):
+        for row in range(0, constants.SUDOKU_GRID_SIZE):
             # Only perform the elimination if the square in question
             # is not the one passed into this function
             if not self.Squares[row][col].x == square.x:
@@ -200,12 +146,12 @@ class Grid(object):
     # Print the grid out, displaying every possible value for that square
     def display(self):
         line = '+'.join(['-'*3]*3)
-        for row in range(0, SUDOKU_GRID_SIZE):
+        for row in range(0, constants.SUDOKU_GRID_SIZE):
             print(
                 ''.join(
                     str(self.Squares[row][col].getValue() or "*") +
                     ('|' if col in [2, 5] else '')
-                    for col in range(0, SUDOKU_GRID_SIZE)
+                    for col in range(0, constants.SUDOKU_GRID_SIZE)
                 )
             )
             if row in [2, 5]:
@@ -215,34 +161,3 @@ class Grid(object):
     def solve(self):
         self.smartElimination()
         return self.bruteForce()
-
-
-if len(sys.argv) < 2:
-    print("ERR: No puzzle number provided")
-    print("Example Usage : $ python pydoku.py <PUZZLE_NUMBER>")
-    exit()
-else:
-    try:
-        puzzle_exists = (
-            int(sys.argv[1]) <= MAX_PUZZLE_NUM and
-            int(sys.argv[1]) >= MIN_PUZZLE_NUM
-        )
-        if puzzle_exists:
-            GridNum = int(sys.argv[1])
-            with open(PUZZLE_FILE) as f:
-                grid = Grid(f.readlines()[(GridNum*10)-9:GridNum*10])
-
-            print("=========== Unsolved Puzzle ===========")
-            grid.display()
-            input("Press Enter to reveal solution")
-            print("\n=========== Solution ===========")
-            grid.solve().display()
-        else:
-            print(
-                "Puzzle Number is out of range, "
-                "please choose a puzzle from 1 - 50"
-            )
-    except ValueError:
-        print("Argument provided is invalid, defaulting to 1")
-
-# Read the relevant lines from the sudoku file and construct a grid with them
