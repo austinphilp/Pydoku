@@ -17,4 +17,11 @@ $ python pydoku.py 1
 
 The argument passed into the program represents which puzzle in the file you would like to solve, you may enter any number between 1 and 50
 
+### Testing
 
+Pydoku has a testing suite which verifies that all puzzles in the provided file can be solved by Pydoku
+It can be ran with the following command
+
+```
+$ python -m pytest pydoku/tests.py
+```
