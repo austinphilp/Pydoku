@@ -48,10 +48,43 @@ class Grid(object):
 
     # Return True if all squares have only one possible value
     def isSolved(self):
+        self.display()
+        print(F"Filled In - {self.checkFilledIn()}\n"
+              F"Unique Rows - {self.checkRows()}\n"
+              F"Unique Cols - {self.checkCols()}\n")
+        return self.checkFilledIn() and self.checkRows() and self.checkCols()
+
+    def checkFilledIn(self):
         for row in range(0, constants.SUDOKU_GRID_SIZE):
             for col in range(0, constants.SUDOKU_GRID_SIZE):
                 if not self.Squares[row][col].isSolved():
                     return False
+        return True
+
+    def checkRows(self):
+        for row in range(0, constants.SUDOKU_GRID_SIZE):
+            row_vals = [
+                self.Squares[row][col].getValue()
+                for col in range(0, constants.SUDOKU_GRID_SIZE)
+            ]
+            if len(row_vals) != len(set(row_vals)):
+                return False
+        return True
+
+    def checkCols(self):
+        i = 0
+        for col in range(0, constants.SUDOKU_GRID_SIZE):
+            col_values = [
+                self.Squares[row][col].getValue()
+                for row in range(0, constants.SUDOKU_GRID_SIZE)
+            ]
+            if len(col_values) != len(set(col_values)):
+                print(F"Failing Col - {i}")
+                print(F"Col Values - {''.join(str(v) for v in col_values)}")
+                print(F"List - {len(col_values)}")
+                print(F"Set - {len(set(col_values))}")
+                return False
+            i += 1
         return True
 
     # Return the square that has the least possible values
