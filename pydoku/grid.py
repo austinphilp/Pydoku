@@ -10,21 +10,21 @@ class Grid(object):
         self.Squares = []
         for line in lines:
             self.Squares.append([])
-            for num in [x for x in line if x.isdigit()]:
+            for num in [int(x) for x in line if x.isdigit()]:
                 row = len(self.Squares)-1
                 col = len(self.Squares[row])
-                self.Squares[row].append(Square(row, col, int(num)))
+                self.Squares[row].append(Square(row, col, num))
 
     def brute_force(self):
         if self.is_solved:
             return self
 
         # if the grid is now invalid, return None
-        if not self.is_valid():
+        if not self.is_valid:
             return None
 
         # Get the square with the least amount of possible values
-        row, col = self.get_most_solved_square().get_coord()
+        row, col = self.get_most_solved_square().coord
 
         # try each possible value
         for possibility in self.Squares[row][col].possibilities:
@@ -32,7 +32,7 @@ class Grid(object):
             backup_squares = deepcopy(self.Squares)
 
             # Assign the possible value
-            self.Squares[row][col].assign_val(possibility)
+            self.Squares[row][col].value = possibility
 
             # Attempt to solve the new grid
             result = self.solve()
@@ -120,10 +120,11 @@ class Grid(object):
             solved += self.remove_possibility_for_subgrid(square)
 
     # Return true if every square in the grid has at least 1 value
+    @property
     def is_valid(self):
         for row in range(0, SUDOKU_GRID_SIZE):
             for col in range(0, SUDOKU_GRID_SIZE):
-                if not self.Squares[row][col].is_valid():
+                if not self.Squares[row][col].is_valid:
                     return False
         return self.check_rows_unique() and self.check_col_unique()
 
