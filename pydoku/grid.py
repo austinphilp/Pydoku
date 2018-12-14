@@ -4,10 +4,10 @@ from square import Square
 
 
 class Grid(object):
-    Squares = []
 
     # construct the grid from a given array of lines from the sudoku file
     def __init__(self, lines):
+        self.Squares = []
         for line in lines:
             self.Squares.append([])
             for num in [x for x in line if x.isdigit()]:
@@ -16,10 +16,6 @@ class Grid(object):
                 self.Squares[row].append(Square(row, col, int(num)))
 
     def brute_force(self):
-        # TODO(Austin) The alg seems to be running in a loop
-
-        print()
-        self.display()
         if self.is_solved:
             return self
 
