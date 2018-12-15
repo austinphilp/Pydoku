@@ -28,7 +28,7 @@ class Square(object):
     def is_valid(self):
         return len(self.possibilities) > 0
 
-    def eliminate_possibility(self, num):
+    def remove_possibility(self, num):
         if num in self.possibilities:
             self.possibilities.discard(num)
             return self.is_solved
