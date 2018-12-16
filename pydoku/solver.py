@@ -1,4 +1,3 @@
-from constants import SUDOKU_GRID_SIZE
 from copy import deepcopy
 
 
@@ -11,9 +10,7 @@ class Solver(object):
     def brute_force(self):
         if self.is_solved:
             return True
-
-        # if the grid is now invalid, return None
-        if not self.is_valid:
+        elif not self.is_valid:
             return False
 
         # Get the square with the least amount of possible values
@@ -31,37 +28,19 @@ class Solver(object):
                 return True
         return False
 
+    @property
+    def is_valid(self):
+        """
+        Return true if every square in the grid has at least 1 value
+        """
+        return all(s.is_valid for s in self.grid) and \
+            all(row.is_valid for row in self.grid.rows) and \
+            all(col.is_valid for col in self.grid.cols)
+
     # Return True if all squares have only one possible value
     @property
     def is_solved(self):
-        return self.check_filled_in() and \
-            self.check_rows_unique() and \
-            self.check_col_unique()
-
-    def check_filled_in(self):
-        return all(square.is_solved for square in self.grid)
-
-    def check_rows_unique(self):
-        for row in range(0, SUDOKU_GRID_SIZE):
-            row_vals = [
-                self.grid[row][col].value
-                for col in range(0, SUDOKU_GRID_SIZE)
-                if self.grid[row][col].is_solved
-            ]
-            if len(row_vals) != len(set(row_vals)):
-                return False
-        return True
-
-    def check_col_unique(self):
-        for col in range(0, SUDOKU_GRID_SIZE):
-            col_values = [
-                self.grid[row][col].value
-                for row in range(0, SUDOKU_GRID_SIZE)
-                if self.grid[row][col].is_solved
-            ]
-            if len(col_values) != len(set(col_values)):
-                return False
-        return True
+        return all(square.is_solved for square in self.grid) and self.is_valid
 
     # Return the square that has the least possible values
     def get_most_solved_square(self):
@@ -74,55 +53,34 @@ class Solver(object):
     def get_solved_squares(self):
         return [square for square in self.grid if square.is_solved]
 
-    # Eliminate possibilities for squares based on the known
-    # values of other squares following the rules of sudoku
     def smart_elimination(self):
+        """
+        Eliminate possibilities for squares based on the known
+        values of other squares following the rules of sudoku
+        """
         solved = self.get_solved_squares()
         while len(solved) > 0:
             square = solved.pop(0)
-            solved += self.remove_possibility_for_row(square)
-            solved += self.remove_possibility_for_col(square)
+            solved += self.remove_possibility_for_collection(
+                collection=(
+                    self.grid.get_row(square.x) +
+                    self.grid.get_col(square.y)
+                ),
+                value=square.value
+            )
             solved += self.remove_possibility_for_subgrid(square)
         return solved
 
-    # Return true if every square in the grid has at least 1 value
-    @property
-    def is_valid(self):
-        for row in range(0, SUDOKU_GRID_SIZE):
-            for col in range(0, SUDOKU_GRID_SIZE):
-                if not self.grid[row][col].is_valid:
-                    return False
-        return self.check_rows_unique() and self.check_col_unique()
+    def remove_possibility_for_collection(self, collection, value):
+        """
+        Remove a value from the possible values for a squares in a collection.
 
-    # Remove the value of the given square from the
-    # possibilities of every other square in its row
-    def remove_possibility_for_row(self, square):
-        solved = []
-        row = square.x
-        for col in range(0, SUDOKU_GRID_SIZE):
-            # Only perform the elimination if the square in
-            # question is not the one passed into this function
-            if (row, col) != (square.x, square.y):
-                # if eliminating that possibility solved
-                # the square, add it to the solved list
-                if self.grid[row][col].remove_possibility(square.value):
-                    solved.append(self.grid[row][col])
-        return solved
-
-    # Remove the value of the given square from the
-    # possibilities of every other square in its column
-    def remove_possibility_for_col(self, square):
-        solved = []
-        col = square.y
-        for row in range(0, SUDOKU_GRID_SIZE):
-            # Only perform the elimination if the square in question
-            # is not the one passed into this function
-            if not self.grid[row][col].x == square.x:
-                # if eliminating that possibility solved
-                # the square, add it to the solved list
-                if self.grid[row][col].remove_possibility(square.value):
-                    solved.append(self.grid[row][col])
-        return solved
+        Return the squares that were solved by this change
+        """
+        return [
+            square for square in collection
+            if not square.is_solved and square.remove_possibility(value)
+        ]
 
     # Remove the value of the given square from the
     # possibilities of every other square in its subgrid

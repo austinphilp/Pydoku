@@ -9,8 +9,18 @@ class SquareCollection(object):
     def __getitem__(self, key):
         return self._squares[key]
 
-    def __iter__(self):
-        return (square for square in self._squares)
+    def __add__(self, other):
+        if isinstance(other, SquareCollection):
+            return SquareCollection(self._squares + other._squares)
+        else:
+            raise TypeError
+
+    def __len__(self):
+        return len(self._squares)
+
+    @property
+    def is_valid(self):
+        return len(self) == (len(set(self)))
 
 
 class Row(SquareCollection):
@@ -46,10 +56,7 @@ class Grid(SquareCollection):
         return Row(self[num])
 
     def get_col(self, num):
-        return Col([
-            s for row in range(0, SUDOKU_GRID_SIZE)
-            for s in self[row][num]
-        ])
+        return Col([self[row][num] for row in range(0, SUDOKU_GRID_SIZE)])
 
     # Print the grid out, displaying every possible value for that square
     def display(self):
@@ -57,7 +64,7 @@ class Grid(SquareCollection):
         for row in range(0, SUDOKU_GRID_SIZE):
             print(
                 ''.join(
-                    str(self._squares[row][col].value or "*") +
+                    str(self[row][col].value or "*") +
                     ('|' if col in [2, 5] else '')
                     for col in range(0, SUDOKU_GRID_SIZE)
                 )
