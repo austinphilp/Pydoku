@@ -33,3 +33,9 @@ class Square(object):
             self.possibilities.discard(num)
             return self.is_solved
         return False
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return str(self.value or "*")
