@@ -1,5 +1,4 @@
-PUZZLE_FILE = "puzzles/p096_sudoku.txt"
+PUZZLE_FILE = "pydoku/puzzles/p096_sudoku.txt"
 BLANK_SPACE_CHAR = 0
-MIN_PUZZLE_NUM = 1
+MIN_PUZZLE_NUM = 0
 MAX_PUZZLE_NUM = 50
-SUDOKU_GRID_SIZE = 9

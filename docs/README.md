@@ -5,16 +5,23 @@ A simple sudoku puzzle solver that reads puzzles from the file provided in the P
 
 ## Installation and Use
 
-Pydoku has no pre-requisites besides python 2.7 itself
+Pydoku requires python 3 and above
 
-In order to get started, simply enter the following commands into your terminal
+In order to get manually test one of the sample puzzles, simply enter the following commands into your terminal
 
 ```
 $ git clone https://github.com/austinphilp/Pydoku
 $ md Pydoku
-$ python pydoku.py 1
+$ python pydoku/pydoku.py 1
 ```
 
 The argument passed into the program represents which puzzle in the file you would like to solve, you may enter any number between 1 and 50
 
+### Testing
 
+Pydoku has a testing suite which verifies that all puzzles in the provided file can be solved by Pydoku
+It can be ran with the following command
+
+```
+$ python -m pytest pydoku/tests.py
+```

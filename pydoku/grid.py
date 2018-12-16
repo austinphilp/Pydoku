@@ -1,163 +1,121 @@
-import constants
-from copy import deepcopy
 from square import Square
 
 
-class Grid(object):
-    Squares = []
+class SquareCollection(object):
+    def __init__(self, squares):
+        self._squares = squares
 
-    # construct the grid from a given array of lines from the sudoku file
-    def __init__(self, lines):
+    @property
+    def is_valid(self):
+        return all(square.is_valid for square in self) and \
+            len(self) == (len(set(self)))
+
+    def __add__(self, other):
+        if isinstance(other, BaseGrid):
+            return SquareCollection(self._squares + [s for s in other])
+        elif isinstance(other, SquareCollection):
+            return SquareCollection(self._squares + other._squares)
+        else:
+            raise TypeError
+
+    def __getitem__(self, key):
+        return self._squares[key]
+
+    def __len__(self):
+        return len([s for s in self._squares])
+
+    def __repr__(self):
+        formatted_str = str(self).replace('\n', '')
+        return F"<{self.__class__.__name__} {formatted_str}>"
+
+    def __str__(self):
+        values = [str(square) for square in self]
+        # Insert breaks to deliniate subgrid boundries
+        values.insert(3, '|')
+        values.insert(7, '|')
+        return ''.join(values)
+
+
+class BaseGrid(SquareCollection):
+    def __add__(self, other):
+        if isinstance(other, BaseGrid):
+            return SquareCollection([s for s in self] + [s for s in other])
+        elif isinstance(other, SquareCollection):
+            return SquareCollection([s for s in self] + other._squares)
+        else:
+            raise TypeError
+
+    def __iter__(self):
+        return (
+            self._squares[x][y] for x in range(0, len(self))
+            for y in range(0, len(self))
+        )
+
+
+class Subgrid(BaseGrid):
+    pass
+
+
+class Grid(BaseGrid):
+    @classmethod
+    def load_from_file(cls, lines):
+        squares = []
         for line in lines:
-            self.Squares.append([])
-            for num in [x for x in line if x.isdigit()]:
-                row = len(self.Squares)-1
-                col = len(self.Squares[row])
-                self.Squares[row].append(Square(row, col, int(num)))
+            squares.append([])
+            for num in [int(x) for x in line if x.isdigit()]:
+                row = len(squares)-1
+                col = len(squares[row])
+                squares[row].append(Square(row, col, num))
+        return cls(squares)
 
-    def bruteForce(self):
-        # if the grid is solved
-        if self.isSolved():
-            return self
+    @property
+    def is_valid(self):
+        return all(collection.is_valid for collection in self.rows + self.cols)
 
-        # if the grid is now invalid, return None
-        if not self.isValid():
-            return None
+    @property
+    def rows(self):
+        return [self.get_row(x) for x in range(0, len(self))]
 
-        # Get the square with the least amount of possible values
-        row, col = self.getMostSolvedSquare().getCoord()
+    @property
+    def cols(self):
+        return [self.get_col(x) for x in range(0, len(self))]
 
-        # try each possible value
-        for possibility in self.Squares[row][col].activePossibilities():
-            # Backup a copy of the squares to restore if branch fails
-            backupSquares = deepcopy(self.Squares)
+    @property
+    def subgrids(self):
+        return [
+            self.get_subgrid(x, y)
+            for y in range(0, len(self), 3)
+            for x in range(0, len(self), 3)
+        ]
 
-            # Assign the possible value
-            self.Squares[row][col].assignVal(possibility)
+    def get_row(self, num):
+        return SquareCollection(self[num])
 
-            # Attempt to solve the new grid
-            result = self.solve()
+    def get_col(self, num):
+        return SquareCollection(
+            [self[row][num] for row in range(0, len(self))]
+        )
 
-            # result will only be None if the grid was not valid
-            if result is not None:
-                return result
-            else:
-                self.Squares = backupSquares
+    def get_subgrid(self, x, y):
+        left_bound = x//3*3
+        top_bound = y//3*3
+        rows = [self.get_row(x) for x in range(left_bound, left_bound+3)]
+        return Subgrid([row[top_bound:top_bound+3] for row in rows])
 
-        return None
+    def get_intersection_for_square(self, square):
+        return self.get_row(square.x) + \
+            self.get_col(square.y) + \
+            self.get_subgrid(square.x, square.y)
 
-    # Return True if all squares have only one possible value
-    def isSolved(self):
-        for row in range(0, constants.SUDOKU_GRID_SIZE):
-            for col in range(0, constants.SUDOKU_GRID_SIZE):
-                if not self.Squares[row][col].isSolved():
-                    return False
-        return True
+    def __repr__(self):
+        percent_solved = len([s for s in self if s.is_solved]) / len(self)**2
+        return F"<{self.__class__.__name__} {percent_solved*100}% Solved>"
 
-    # Return the square that has the least possible values
-    def getMostSolvedSquare(self):
-        minVal = 9
-        minSquare = None
-        for row in range(0, constants.SUDOKU_GRID_SIZE):
-            for col in range(0, constants.SUDOKU_GRID_SIZE):
-                if not self.Squares[row][col].isSolved():
-                    if self.Squares[row][col].numberOfPossibilities() < minVal:
-                        minSquare = self.Squares[row][col]
-                        minVal = self.Squares[row][col].numberOfPossibilities()
-        return minSquare
-
-    # Return a list of all squares in the grid that are solved
-    def getSolvedSquares(self):
-        solved = []
-        for row in range(0, constants.SUDOKU_GRID_SIZE):
-            for col in range(0, constants.SUDOKU_GRID_SIZE):
-                if self.Squares[row][col].isSolved():
-                    solved.append(self.Squares[row][col])
-        return solved
-
-    # Eliminate possibilities for squares based on the known
-    # values of other squares following the rules of sudoku
-    def smartElimination(self):
-        solved = self.getSolvedSquares()
-        while len(solved) > 0:
-            square = solved.pop(0)
-            solved += self.removePossibilityForRow(square)
-            solved += self.removePossibilityForCol(square)
-            solved += self.removePossibilityForSubGrid(square)
-
-    # Return true if every square in the grid has at least 1 value
-    def isValid(self):
-        for row in range(0, constants.SUDOKU_GRID_SIZE):
-            for col in range(0, constants.SUDOKU_GRID_SIZE):
-                if not self.Squares[row][col].isValid():
-                    return False
-        return True
-
-    # Remove the value of the given square from the
-    # possibilities of every other square in its row
-    def removePossibilityForRow(self, square):
-        solved = []
-        row = square.x
-        for col in range(0, constants.SUDOKU_GRID_SIZE):
-            # Only perform the elimination if the square in
-            # question is not the one passed into this function
-            if not col == square.y:
-                # if eliminating that possibility solved
-                # the square, add it to the solved list
-                if self.Squares[row][col].eliminatePossibility(
-                        square.getValue()):
-                    solved.append(self.Squares[row][col])
-        return solved
-
-    # Remove the value of the given square from the
-    # possibilities of every other square in its column
-    def removePossibilityForCol(self, square):
-        solved = []
-        col = square.y
-        for row in range(0, constants.SUDOKU_GRID_SIZE):
-            # Only perform the elimination if the square in question
-            # is not the one passed into this function
-            if not self.Squares[row][col].x == square.x:
-                # if eliminating that possibility solved
-                # the square, add it to the solved list
-                if self.Squares[row][col].eliminatePossibility(
-                        square.getValue()):
-                    solved.append(self.Squares[row][col])
-        return solved
-
-    # Remove the value of the given square from the
-    # possibilities of every other square in its subgrid
-    def removePossibilityForSubGrid(self, square):
-        solved = []
-        if square.getValue() is None:
-            return None
-        for row in range((square.x//3)*3, ((square.x//3)*3)+3):
-            for col in range((square.y//3)*3, ((square.y//3)*3)+3):
-                # Only perform the elimination if the square in
-                # question is not the one passed into this function
-                if row != square.x and col != square.y:
-                    # if eliminating that possibility solved
-                    # the square, add it to the solved list
-                    if self.Squares[row][col].eliminatePossibility(
-                            square.getValue()):
-                        solved.append(self.Squares[row][col])
-        return solved
-
-    # Print the grid out, displaying every possible value for that square
-    def display(self):
-        line = '+'.join(['-'*3]*3)
-        for row in range(0, constants.SUDOKU_GRID_SIZE):
-            print(
-                ''.join(
-                    str(self.Squares[row][col].getValue() or "*") +
-                    ('|' if col in [2, 5] else '')
-                    for col in range(0, constants.SUDOKU_GRID_SIZE)
-                )
-            )
-            if row in [2, 5]:
-                print(line)
-
-    # First use intelligent methods to eliminate as many methods as possible,
-    def solve(self):
-        self.smartElimination()
-        return self.bruteForce()
+    def __str__(self):
+        line = '+'.join(['-' * 3] * 3)
+        display = []
+        for row in self.rows:
+            display.append(str(row))
+        display.insert(3, line)
+        display.insert(7, line)
+        return '\n'.join(display)

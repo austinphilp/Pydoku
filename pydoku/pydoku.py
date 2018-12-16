@@ -1,35 +1,23 @@
 import sys
 
-import constants
-from grid import Grid
+from solver import Solver
+from utils import load_grid_from_file
 
 
-if len(sys.argv) < 2:
-    print("ERR: No puzzle number provided")
-    print("Example Usage : $ python pydoku.py <PUZZLE_NUMBER>")
-    exit()
-else:
-    try:
-        puzzle_exists = (
-            int(sys.argv[1]) <= constants.MAX_PUZZLE_NUM and
-            int(sys.argv[1]) >= constants.MIN_PUZZLE_NUM
-        )
-        if puzzle_exists:
-            GridNum = int(sys.argv[1])
-            with open(constants.PUZZLE_FILE) as f:
-                grid = Grid(f.readlines()[(GridNum*10)-9:GridNum*10])
+def main(grid_num):
+    grid = load_grid_from_file(grid_num)
+    print("=========== Unsolved Puzzle ===========")
+    print(grid)
+    input("Press Enter to reveal solution")
+    print("\n=========== Solution ===========\n")
+    Solver(grid).solve()
+    print(grid)
 
-            print("=========== Unsolved Puzzle ===========")
-            grid.display()
-            input("Press Enter to reveal solution")
-            print("\n=========== Solution ===========")
-            grid.solve().display()
-        else:
-            print(
-                "Puzzle Number is out of range, "
-                "please choose a puzzle from 1 - 50"
-            )
-    except ValueError:
-        print("Argument provided is invalid, defaulting to 1")
 
-# Read the relevant lines from the sudoku file and construct a grid with them
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("ERR: No puzzle number provided")
+        print("Example Usage : $ python pydoku.py <PUZZLE_NUMBER>")
+        exit()
+    else:
+        main(grid_num=int(sys.argv[1]))
