@@ -1,17 +1,17 @@
 import sys
 
-from grid.models import GridSolver
+from solver import Solver
 from utils import load_grid_from_file
 
 
 def main(grid_num):
     grid = load_grid_from_file(grid_num)
     print("=========== Unsolved Puzzle ===========")
-    grid.display()
+    print(grid)
     input("Press Enter to reveal solution")
-    print("\n=========== Solution ===========")
-    solver = GridSolver(grid).solve()
-    solver.grid.display()
+    print("\n=========== Solution ===========\n")
+    Solver(grid).solve()
+    print(grid)
 
 
 if __name__ == "__main__":
