@@ -1,5 +1,6 @@
 import sys
 
+from grid.models import GridSolver
 from utils import load_grid_from_file
 
 
@@ -9,7 +10,9 @@ def main(grid_num):
     grid.display()
     input("Press Enter to reveal solution")
     print("\n=========== Solution ===========")
-    grid.solve().display()
+    solver = GridSolver(grid).solve()
+    solver.grid.display()
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
