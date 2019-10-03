@@ -2,19 +2,26 @@ from square import Square
 
 
 class SquareCollection(object):
+    """
+    A collection of square objects,
+    """
     def __init__(self, squares):
         self._squares = squares
 
     @property
     def is_valid(self):
+        """
+        Return true if all squares in this collection are unqiue and valid
+        """
         return all(square.is_valid for square in self) and \
             len(self) == (len(set(self)))
 
     def __add__(self, other):
-        if isinstance(other, BaseGrid):
+        """
+        Override __add__
+        """
+        if isinstance(other, SquareCollection):
             return SquareCollection(self._squares + [s for s in other])
-        elif isinstance(other, SquareCollection):
-            return SquareCollection(self._squares + other._squares)
         else:
             raise TypeError
 
@@ -37,17 +44,10 @@ class SquareCollection(object):
 
 
 class BaseGrid(SquareCollection):
-    def __add__(self, other):
-        if isinstance(other, BaseGrid):
-            return SquareCollection([s for s in self] + [s for s in other])
-        elif isinstance(other, SquareCollection):
-            return SquareCollection([s for s in self] + other._squares)
-        else:
-            raise TypeError
-
     def __iter__(self):
         return (
-            self._squares[x][y] for x in range(0, len(self))
+            self._squares[x][y]
+            for x in range(0, len(self))
             for y in range(0, len(self))
         )
 
