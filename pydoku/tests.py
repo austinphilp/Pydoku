@@ -10,6 +10,6 @@ def _test_puzzle(grid_num):
 
 
 # Auto generate puzzle tests to test each puzzle in the puzzle file
-# independently
+# independently, without having to write 50 different test cases
 for n in range(0, 50):
     locals()[F"test_puzzle_{n}"] = lambda: _test_puzzle(n)
