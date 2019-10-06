@@ -1,4 +1,4 @@
-PUZZLE_FILE = "pydoku/puzzles/p096_sudoku.txt"
+PUZZLE_FILE = "puzzles/p096_sudoku.txt"
 BLANK_SPACE_CHAR = 0
 MIN_PUZZLE_NUM = 0
 MAX_PUZZLE_NUM = 50
