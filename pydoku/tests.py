@@ -3,6 +3,18 @@ from utils import load_grid_from_file
 
 
 def _test_puzzle(grid_num):
+    """
+    This method will be used to dynamically generate puzzle tests using the
+    preloaded puzzles (within the puzzles/ folder at project root)
+
+    Arguments:
+        grid_num(int) - The id of the grid you would like to test within the
+        p096_sudoku.txt test folder
+
+    Asserts:
+        After running the loaded puzzle through the Solver.solve method, assert
+        that the puzzle is solved (All squares have exactly 1 possible value)
+    """
     grid = load_grid_from_file(grid_num)
     solver = Solver(grid)
     solver.solve()
